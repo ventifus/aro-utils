@@ -1,0 +1,8 @@
+azure-identity>=1.5.0
+azure-mgmt-redhatopenshift
+azure-mgmt-resource
+azure-mgmt-resource>=18.0.0
+azure-mgmt-subscription
+openshift-client
+PyYAML
+types-PyYAML
