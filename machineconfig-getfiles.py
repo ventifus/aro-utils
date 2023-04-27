@@ -6,6 +6,11 @@ from urllib.parse import unquote
 
 import yaml
 
+"""
+Usage: Pipe in yaml in stdin. For example, 
+  $ oc get machineconfig 01-master-container-runtime -o yaml | machineconfig-getfiles.py
+"""
+
 
 def decode_data(data: str) -> str:
     if data[0:5] == "data:":
