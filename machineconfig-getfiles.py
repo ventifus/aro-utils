@@ -3,14 +3,26 @@ from base64 import b64decode
 from sys import argv, stderr, stdin, stdout
 from typing import Any, Dict, List
 from urllib.parse import unquote
+from argparse import ArgumentParser
+from fnmatch import fnmatch
 
 import yaml
 
 """
-Usage: Pipe in yaml in stdin. For example, 
+usage: Pipe in yaml to stdin. For example, 
   $ oc get machineconfig 01-master-container-runtime -o yaml | machineconfig-getfiles.py
-"""
 
+usage: machineconfig-getfiles [-h] [-l] [FILE ...]
+
+Extracts files from MachineConfig yaml
+
+positional arguments:
+  FILE        a path or wildcard glob
+
+options:
+  -h, --help  show this help message and exit
+  -l, --list  show only file names.
+"""
 
 def decode_data(data: str) -> str:
     if data[0:5] == "data:":
@@ -30,17 +42,23 @@ def decode_data(data: str) -> str:
                 in_data = data[comma_index+1:]
                 out_data: bytes = b64decode(in_data)
                 return out_data.decode(encoding=charset)
-                # print(b64decode(data[comma_index+1:], stdout))
             else:
                 return unquote(data[comma_index+1:])
     else:
         print("No type specified, assuming url-encoding", file=stderr)
         return unquote(data)
 
+EXAMPLE = """Pipe in yaml to stdin. For example, 
+  $ oc get machineconfig 01-master-container-runtime -o yaml | machineconfig-getfiles.py
+"""
+
 if __name__ == "__main__":
-    search_files: list[str] = []
-    if len(argv) > 1:
-        search_files = argv[1:]
+    parser = ArgumentParser(prog="machineconfig-getfiles", description="Extracts files from MachineConfig yaml")
+    parser.add_argument("file_globs", metavar="FILE", type=str, nargs="*", help="a path or wildcard glob")
+    parser.add_argument("-l", "--list", dest="only_names", action="store_true", help="show only file names.")
+    parser.usage = EXAMPLE + "\n" + parser.format_usage()
+    args = parser.parse_args()
+    search_files: list[str] = args.file_globs
     y: Dict[str, Any] = yaml.safe_load(stdin)
     if type(y) != dict:
         print(f"Input was not yaml, detected {type(y)}.")
@@ -57,7 +75,10 @@ if __name__ == "__main__":
             continue
         metadata = mc['metadata']
         kind = mc.get('kind')
-        print(f"### {metadata.get('name')} #{metadata.get('generation')}   created={metadata.get('creationTimestamp')}")
+        if args.only_names:
+            print(f"{metadata.get('name')} #{metadata.get('generation')}   created={metadata.get('creationTimestamp')}")
+        else:
+            print(f"### {metadata.get('name')} #{metadata.get('generation')}   created={metadata.get('creationTimestamp')}")
         if kind != "MachineConfig":
             print(f"Unsupported kind: {kind}")
             exit(1)
@@ -66,13 +87,17 @@ if __name__ == "__main__":
             if search_files:
                 found = False
                 for f in search_files:
-                    if f in file_name:
+                    if fnmatch(file_name, f):
                         found = True
                 if not found:
                     continue
             contents = file["contents"]
-            print("---")
-            print(f"### [{metadata.get('name')}] {file_name}   [mode={file.get('mode')}, overwrite={file.get('overwrite')}]")
+            if args.only_names:
+                print(f"    {file_name}   [mode={file.get('mode')}, overwrite={file.get('overwrite')}]")
+                continue
+            else:
+                print("---")
+                print(f"### [{metadata.get('name')}] {file_name}   [mode={file.get('mode')}, overwrite={file.get('overwrite')}]")
             source = contents.get("source")
             if source:
                 print(decode_data(source), flush=True)
@@ -82,11 +107,15 @@ if __name__ == "__main__":
             if search_files:
                 found = False
                 for f in search_files:
-                    if f in name:
+                    if fnmatch(name, f):
                         found = True
                 if not found:
                     continue
-            print(f"### Systemd Unit {name} enabled={unit.get('enabled')}")
+            if args.only_names:
+                print(f"    {name}   [enabled={unit.get('enabled')}]")
+                continue
+            else:
+                print(f"### Systemd Unit {name}   [enabled={unit.get('enabled')}]")
             for dropin in unit.get("dropins", list()):
                 print(f"### {name}.d/{dropin.get('name')}")
                 print(dropin["contents"], flush=True)
