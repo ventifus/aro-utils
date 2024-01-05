@@ -92,18 +92,22 @@ if __name__ == "__main__":
                 if not found:
                     continue
             contents = file["contents"]
+            mode = file.get('mode')
+            mode_oct = oct(mode).replace("o", "")
             if args.only_names:
-                print(f"    {file_name}   [mode={file.get('mode')}, overwrite={file.get('overwrite')}]")
+                
+                print(f"    {file_name}   [{mode=} ({mode_oct}), overwrite={file.get('overwrite')}]")
                 continue
             else:
                 print("---")
-                print(f"### [{metadata.get('name')}] {file_name}   [mode={file.get('mode')}, overwrite={file.get('overwrite')}]")
+                print(f"### [{metadata.get('name')}] {file_name}   [mode={mode=} ({mode_oct}), overwrite={file.get('overwrite')}]")
             source = contents.get("source")
             if source:
                 print(decode_data(source), flush=True)
         units = mc["spec"]["config"].get("systemd", dict()).get("units", list())
         for unit in units:
             name = unit.get("name")
+            contents = unit.get("contents")
             if search_files:
                 found = False
                 for f in search_files:
@@ -116,6 +120,9 @@ if __name__ == "__main__":
                 continue
             else:
                 print(f"### Systemd Unit {name}   [enabled={unit.get('enabled')}]")
+                if contents:
+                    print(decode_data(contents), flush=True)
+
             for dropin in unit.get("dropins", list()):
                 print(f"### {name}.d/{dropin.get('name')}")
                 print(dropin["contents"], flush=True)

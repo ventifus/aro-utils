@@ -6,3 +6,4 @@ azure-mgmt-subscription
 openshift-client
 PyYAML
 types-PyYAML
+pygments

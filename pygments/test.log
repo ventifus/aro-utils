@@ -1,0 +1,4 @@
+DEBU[2023-10-23T20:39:19Z]pkg/operator/controllers/pullsecret/pullsecret_controller.go:85 pullsecret.(*Reconciler).Reconcile() running                                       controller=PullSecret arg1=test
+INFO[2023-10-23T20:39:19Z]pkg/operator/controllers/pullsecret/pullsecret_controller.go:85 pullsecret.(*Reconciler).Reconcile() running                                       controller=PullSecret function=hello_world()
+WARN[2023-10-23T20:39:20Z]pkg/operator/controllers/pullsecret/pullsecret_controller.go:85 pullsecret.(*Reconciler).Reconcile() running                                       controller=PullSecret
+DEBU[2023-10-23T20:39:20Z]pkg/operator/controllers/pullsecret/pullsecret_controller.go:85 pullsecret.(*Reconciler).Reconcile() running                                       controller=PullSecret

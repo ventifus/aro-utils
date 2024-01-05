@@ -1,0 +1,24 @@
+FROM baseimg AS builder
+ARG GOOS=linux \
+    GOPATH=/app
+ARG ARO_VERSION
+ARG GITDIR= \
+    COMMONDIR= \
+    IS_OFFICIAL_RELEASE=
+WORKDIR /app/src
+USER root
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    if [ "${GITDIR}" != "" ]; then echo gitdir: $GITDIR > .git; fi &&\
+    if [ "${COMMONDIR}" != "" ]; then echo ${COMMONDIR} > ${GITDIR}/commondir; fi &&\
+    git status &&\
+    make validate-go unit-test-go ||: &&\
+    make aro VERSION=${ARO_VERSION} RELEASE=${IS_OFFICIAL_RELEASE} -o generate &&\
+    mkdir /out && cp aro /out
+
+FROM ubi
+ENV ARO_CHECKOUT_PATH="/"
+COPY --from=builder /out/aro /usr/local/bin/
+ENTRYPOINT ["aro"]
+EXPOSE 2222/tcp 8080/tcp 8443/tcp 8444/tcp 8445/tcp
+USER 1000
+
