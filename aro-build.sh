@@ -1,4 +1,9 @@
 #!/bin/bash
+# Build ARO in an arbitrary directory and create a container tagged with
+# branch and commit hash. Works on git worktrees too.
+#
+# Usage: aro-build PATH [GO_TOOLSET_VERSION] [UBI_MINIMAL_VERSION] [GOLANGCI_LINT_VERSION]
+
 set -euo pipefail
 IMG_GO_TOOLSET="docker://registry.access.redhat.com/ubi8/go-toolset:${2:-1.18.4}"
 IMG_UBI="docker://registry.access.redhat.com/ubi8/ubi-minimal:${3:-latest}"
@@ -17,11 +22,11 @@ fi
 BRANCH="$(git branch --show-current)"
 REV="$(git rev-parse HEAD)"
 TAG="${BRANCH}-${REV}"
-RELEASE="$(git describe --exact-match)"
+RELEASE="$(git describe --exact-match 2>/dev/null ||:)"
 if [ "$RELEASE" != "" ]; then
     TAG="${RELEASE}"
 fi
-TAG_BRANCH_FLAG="-t \"${BRANCH}\""
+TAG_BRANCH_FLAG="-t ${BRANCH}"
 if [ "$BRANCH" == "" ]; then
     TAG_BRANCH_FLAG=""
 fi
